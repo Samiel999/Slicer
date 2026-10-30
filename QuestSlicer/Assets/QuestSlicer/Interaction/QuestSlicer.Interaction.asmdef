@@ -1,0 +1,14 @@
+{
+  "name": "QuestSlicer.Interaction",
+  "rootNamespace": "QuestSlicer.Interaction",
+  "references": ["QuestSlicer.Core", "com.unity.xr.interaction.toolkit"],
+  "includePlatforms": [],
+  "excludePlatforms": ["Editor"],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

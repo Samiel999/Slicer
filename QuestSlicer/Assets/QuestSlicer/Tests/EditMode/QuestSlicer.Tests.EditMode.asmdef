@@ -1,0 +1,14 @@
+{
+  "name": "QuestSlicer.Tests.EditMode",
+  "rootNamespace": "QuestSlicer.Tests",
+  "references": ["QuestSlicer.Core", "UnityEditor", "UnityEngine", "nunit"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

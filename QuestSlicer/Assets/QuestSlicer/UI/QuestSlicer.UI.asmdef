@@ -1,0 +1,14 @@
+{
+  "name": "QuestSlicer.UI",
+  "rootNamespace": "QuestSlicer.UI",
+  "references": ["QuestSlicer.Core", "com.unity.ugui"],
+  "includePlatforms": [],
+  "excludePlatforms": ["Editor"],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
