@@ -57,6 +57,7 @@ namespace QuestSlicer.Editor
             var workspace = new GameObject("Workspace");
             workspace.transform.parent = null;
             var printBed = workspace.AddComponent<PrintBed>();
+            var scaleHost = workspace.AddComponent<WorkspaceScaleHost>();
 
             // Print bed
             var bed = new GameObject("PrintBed");
@@ -92,8 +93,9 @@ namespace QuestSlicer.Editor
 
             // Transform controller
             var transformCtrl = exampleCube.AddComponent<ModelTransformController>();
-            var workspaceScale = new WorkspaceScale();
-            transformCtrl.workspaceScale = workspaceScale;
+            var transformSerialized = new SerializedObject(transformCtrl);
+            transformSerialized.FindProperty("workspaceScaleHost").objectReferenceValue = scaleHost;
+            transformSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateBedMesh(GameObject bedGO, float widthMm, float depthMm, float heightMm)
