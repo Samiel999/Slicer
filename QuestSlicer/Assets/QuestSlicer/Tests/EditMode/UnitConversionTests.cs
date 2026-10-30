@@ -8,18 +8,21 @@ namespace QuestSlicer.Tests
     /// </summary>
     public class UnitConversionTests
     {
+        [Test]
         public void MmToM_20mm_Returns0_02m()
         {
             float result = QuestSlicer.Core.UnitConversion.MmToM(20f);
             Assert.AreEqual(0.02f, result, 0.0001f);
         }
 
+        [Test]
         public void MToMm_0_02m_Returns20mm()
         {
             float result = QuestSlicer.Core.UnitConversion.MToMm(0.02f);
             Assert.AreEqual(20f, result, 0.0001f);
         }
 
+        [Test]
         public void MmToM_Roundtrip_ReturnsOriginal()
         {
             const float original = 150f;
@@ -27,6 +30,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(original, result, 0.0001f);
         }
 
+        [Test]
         public void MToMm_Roundtrip_ReturnsOriginal()
         {
             const float original = 0.15f;
@@ -34,18 +38,21 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(original, result, 0.0001f);
         }
 
+        [Test]
         public void MmToM_Zero_ReturnsZero()
         {
             float result = QuestSlicer.Core.UnitConversion.MmToM(0f);
             Assert.AreEqual(0f, result);
         }
 
+        [Test]
         public void MmToM_Negative_ReturnsNegative()
         {
             float result = QuestSlicer.Core.UnitConversion.MmToM(-10f);
             Assert.AreEqual(-0.01f, result, 0.0001f);
         }
 
+        [Test]
         public void MmToM_Vector3_PreservesComponents()
         {
             var input = new UnityEngine.Vector3(10, 20, 30);
@@ -57,6 +64,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(expected.z, result.z, 0.0001f);
         }
 
+        [Test]
         public void MToMm_Vector3_PreservesComponents()
         {
             var input = new UnityEngine.Vector3(0.01f, 0.02f, 0.03f);
@@ -74,12 +82,14 @@ namespace QuestSlicer.Tests
     /// </summary>
     public class WorkspaceScaleTests
     {
+        [Test]
         public void ViewScale_DefaultIs1()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
             Assert.AreEqual(1.0f, scale.ViewScale);
         }
 
+        [Test]
         public void ViewScale_SetsCorrectValue()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
@@ -87,6 +97,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(0.5f, scale.ViewScale);
         }
 
+        [Test]
         public void ViewScale_MinimumClampedTo0_01()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
@@ -94,6 +105,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(0.01f, scale.ViewScale);
         }
 
+        [Test]
         public void CameraMoveToModelMoveMm_Scale1_1_1Ratio()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
@@ -102,6 +114,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(100f, result, 0.01f);
         }
 
+        [Test]
         public void CameraMoveToModelMoveMm_Scale0_5_2xAmplification()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
@@ -110,6 +123,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(200f, result, 0.01f);
         }
 
+        [Test]
         public void ModelMoveMmToCameraMoveM_Scale2_0_5xReduction()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
@@ -118,6 +132,7 @@ namespace QuestSlicer.Tests
             Assert.AreEqual(0.2f, result, 0.001f);
         }
 
+        [Test]
         public void ViewScale_DoesNotChangeModelDimensions()
         {
             var scale = new QuestSlicer.Core.WorkspaceScale();
