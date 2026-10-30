@@ -9,19 +9,30 @@ namespace QuestSlicer.Editor
 
     /// <summary>
     /// Editor-Setup-Routine für QuestSlicer.
-    /// Idempotent: ein zweiter Durchlauf erzeugt keine Duplikate.
+    /// Erzeugt die Workspace-Szene nur, wenn die Zieldatei noch nicht existiert.
+    /// Kein vollständiger Idempotenzschutz: eine bereits vorhandene Datei wird nie überschrieben.
     /// </summary>
     public static class QuestSlicerSetup
     {
         [MenuItem("Tools/QuestSlicer/Setup Scene")]
         public static void SetupScene()
         {
+            string scenePath = "Assets/QuestSlicer/Scenes/SlicerWorkspace.unity";
+
             // Check if scene already exists
-            var existingScene = SceneManager.GetSceneByPath("Assets/QuestSlicer/Scenes/SlicerWorkspace.unity");
+            var existingScene = SceneManager.GetSceneByPath(scenePath);
             if (existingScene.IsValid())
             {
                 Debug.Log("[QuestSlicer] SlicerWorkspace.unity exists. Opening for review.");
-                EditorSceneManager.OpenScene("Assets/QuestSlicer/Scenes/SlicerWorkspace.unity");
+                EditorSceneManager.OpenScene(scenePath);
+                return;
+            }
+
+            // Abort before any setup if the scene file exists on disk but is not loaded
+            string projectRoot = System.IO.Path.GetDirectoryName(Application.dataPath);
+            if (System.IO.File.Exists(System.IO.Path.Combine(projectRoot, scenePath)))
+            {
+                Debug.LogError("[QuestSlicer] " + scenePath + " existiert bereits auf der Platte. Setup abgebrochen, Datei wurde nicht überschrieben.");
                 return;
             }
 
@@ -36,7 +47,6 @@ namespace QuestSlicer.Editor
             SetupDebugCamera(scene);
 
             // Save scene
-            string scenePath = "Assets/QuestSlicer/Scenes/SlicerWorkspace.unity";
             EditorSceneManager.SaveScene(scene, scenePath);
 
             // Update EditorBuildSettings
@@ -76,7 +86,7 @@ namespace QuestSlicer.Editor
             var cubeMeshFilter = exampleCube.AddComponent<MeshFilter>();
             cubeMeshFilter.sharedMesh = cubeMesh;
 
-            var cubeMeshRenderer = exampleCube.AddComponent<Renderer>();
+            var cubeMeshRenderer = exampleCube.AddComponent<MeshRenderer>();
             var cubeMaterial = CreateOrGetMaterial(new Color(0.8f, 0.4f, 0.2f), "CubeMaterial");
             cubeMeshRenderer.sharedMaterial = cubeMaterial;
 
@@ -120,7 +130,7 @@ namespace QuestSlicer.Editor
             var bedFilter = bedBox.AddComponent<MeshFilter>();
             bedFilter.sharedMesh = mesh;
 
-            var bedRenderer = bedBox.AddComponent<Renderer>();
+            var bedRenderer = bedBox.AddComponent<MeshRenderer>();
             var bedMaterial = CreateOrGetMaterial(new Color(0.3f, 0.3f, 0.3f), "BedMaterial");
             bedRenderer.sharedMaterial = bedMaterial;
         }
