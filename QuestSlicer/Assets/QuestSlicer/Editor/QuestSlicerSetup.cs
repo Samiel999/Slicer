@@ -41,10 +41,11 @@ namespace QuestSlicer.Editor
             scene.name = "SlicerWorkspace";
 
             // Add root objects
-            SetupWorkspace(scene);
+            ModelTransformController cubeController;
+            SetupWorkspace(scene, out cubeController);
             SetupXROrigins(scene);
             SetupLighting(scene);
-            SetupDebugCamera(scene);
+            SetupDebugCamera(scene, cubeController);
 
             // Save scene
             EditorSceneManager.SaveScene(scene, scenePath);
@@ -61,7 +62,7 @@ namespace QuestSlicer.Editor
             EditorSceneManager.OpenScene(scenePath);
         }
 
-        private static void SetupWorkspace(Scene scene)
+        private static void SetupWorkspace(Scene scene, out ModelTransformController cubeController)
         {
             // Workspace root
             var workspace = new GameObject("Workspace");
@@ -88,7 +89,7 @@ namespace QuestSlicer.Editor
 
             var cubeMeshRenderer = exampleCube.AddComponent<MeshRenderer>();
             var cubeMaterial = CreateOrGetMaterial(new Color(0.8f, 0.4f, 0.2f), "CubeMaterial");
-            cubeMeshRenderer.sharedMaterial = cubeMaterial;
+            if (cubeMaterial != null) cubeMeshRenderer.sharedMaterial = cubeMaterial; // null: ambiguous name, error already logged
 
             // Make cube grabbable (XRI will be available after package install)
             try
@@ -106,6 +107,7 @@ namespace QuestSlicer.Editor
             var transformSerialized = new SerializedObject(transformCtrl);
             transformSerialized.FindProperty("workspaceScaleHost").objectReferenceValue = scaleHost;
             transformSerialized.ApplyModifiedPropertiesWithoutUndo();
+            cubeController = transformCtrl;
         }
 
         private static void CreateBedMesh(GameObject bedGO, float widthMm, float depthMm, float heightMm)
@@ -132,7 +134,7 @@ namespace QuestSlicer.Editor
 
             var bedRenderer = bedBox.AddComponent<MeshRenderer>();
             var bedMaterial = CreateOrGetMaterial(new Color(0.3f, 0.3f, 0.3f), "BedMaterial");
-            bedRenderer.sharedMaterial = bedMaterial;
+            if (bedMaterial != null) bedRenderer.sharedMaterial = bedMaterial; // null: ambiguous name, error already logged
         }
 
         private static void SetupXROrigins(Scene scene)
@@ -170,7 +172,7 @@ namespace QuestSlicer.Editor
             sunLight.shadows = UnityEngine.LightShadows.Soft;
         }
 
-        private static void SetupDebugCamera(Scene scene)
+        private static void SetupDebugCamera(Scene scene, ModelTransformController modelController)
         {
             var debugCamera = new GameObject("Debug Camera");
             debugCamera.transform.position = new Vector3(0, 2, -4);
@@ -181,25 +183,49 @@ namespace QuestSlicer.Editor
             cam.fieldOfView = 60f;
             cam.stereoTargetEye = StereoTargetEyeMask.None; // Desktop camera, not XR
 
-            debugCamera.AddComponent<DesktopTestController>();
+            // Explicit bindings: model to control, camera as direction reference (camera itself is not moved)
+            var desktopCtrl = debugCamera.AddComponent<DesktopTestController>();
+            var desktopSerialized = new SerializedObject(desktopCtrl);
+            desktopSerialized.FindProperty("modelController").objectReferenceValue = modelController;
+            desktopSerialized.FindProperty("directionReference").objectReferenceValue = debugCamera.transform;
+            desktopSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        /// <summary>
+        /// Liefert das vorhandene Material mit dem Namen oder erzeugt ein neues.
+        /// Gibt null zurück, wenn mehrere verschiedene Materialobjekte denselben Namen tragen:
+        /// dann ist die Auswahl mehrdeutig und wird als Fehler gemeldet, statt einen Treffer zu wählen.
+        /// </summary>
         private static Material CreateOrGetMaterial(Color color, string name)
         {
-            // Try to find existing material
-            var renderers = Object.FindObjectsOfType<Renderer>();
-            foreach (var r in renderers)
+            // Collect distinct material objects with this name (same object on several renderers is fine)
+            var matches = new System.Collections.Generic.HashSet<Material>();
+            foreach (var r in Object.FindObjectsByType<Renderer>())
             {
                 if (r.sharedMaterial != null && r.sharedMaterial.name == name)
                 {
-                    return r.sharedMaterial;
+                    matches.Add(r.sharedMaterial);
                 }
             }
 
-            // Use basic built-in Lit shader
-            Shader litShader = Shader.Find("Universal RenderPipeline/Lit")
-                           ?? Shader.Find("Standard")
-                           ?? Shader.Find("Debug");
+            if (matches.Count == 1)
+            {
+                foreach (var existing in matches) return existing;
+            }
+            if (matches.Count > 1)
+            {
+                Debug.LogError("[QuestSlicer] Mehrdeutig: " + matches.Count + " verschiedene Materialobjekte namens '" + name + "' in der Szene. Materialzuweisung abgebrochen.");
+                return null;
+            }
+
+            // URP Lit (exact name: "Universal Render Pipeline/Lit"). Falls nicht verfügbar,
+            // wird das laut gemeldet: ein Built-in-Fallback wäre mit der aktiven URP-Pipeline nicht kompatibel.
+            Shader litShader = Shader.Find("Universal Render Pipeline/Lit");
+            if (litShader == null)
+            {
+                Debug.LogError("[QuestSlicer] Shader 'Universal Render Pipeline/Lit' nicht gefunden. Material '" + name + "' verwendet Fallback.");
+                litShader = Shader.Find("Standard") ?? Shader.Find("Debug");
+            }
 
             var newMat = new Material(litShader);
             newMat.name = name;
@@ -208,13 +234,25 @@ namespace QuestSlicer.Editor
             return newMat;
         }
 
+
         private static Vector3[] CreateBoxVertices(Vector3 size)
         {
+            // 24 vertices: four per face, so each face has its own normal
             float hx = size.x * 0.5f, hy = size.y * 0.5f, hz = size.z * 0.5f;
             return new[]
             {
+                // Front (+Z)
                 new Vector3(-hx, -hy, hz), new Vector3(hx, -hy, hz), new Vector3(hx, hy, hz), new Vector3(-hx, hy, hz),
-                new Vector3(-hx, -hy, -hz), new Vector3(hx, -hy, -hz), new Vector3(hx, hy, -hz), new Vector3(-hx, hy, -hz),
+                // Back (-Z)
+                new Vector3(hx, -hy, -hz), new Vector3(-hx, -hy, -hz), new Vector3(-hx, hy, -hz), new Vector3(hx, hy, -hz),
+                // Top (+Y)
+                new Vector3(-hx, hy, hz), new Vector3(hx, hy, hz), new Vector3(hx, hy, -hz), new Vector3(-hx, hy, -hz),
+                // Bottom (-Y)
+                new Vector3(-hx, -hy, -hz), new Vector3(hx, -hy, -hz), new Vector3(hx, -hy, hz), new Vector3(-hx, -hy, hz),
+                // Right (+X)
+                new Vector3(hx, -hy, hz), new Vector3(hx, -hy, -hz), new Vector3(hx, hy, -hz), new Vector3(hx, hy, hz),
+                // Left (-X)
+                new Vector3(-hx, -hy, -hz), new Vector3(-hx, -hy, hz), new Vector3(-hx, hy, hz), new Vector3(-hx, hy, -hz),
             };
         }
 
@@ -222,14 +260,15 @@ namespace QuestSlicer.Editor
         {
             return new[]
             {
-                0, 1, 2, 0, 2, 3, // front
-                5, 4, 7, 5, 7, 6, // back
-                3, 2, 6, 3, 6, 7, // top
-                4, 5, 1, 4, 1, 0, // bottom
-                1, 5, 6, 1, 6, 2, // right
-                4, 0, 3, 4, 3, 7, // left
+                0, 1, 2, 0, 2, 3,       // front
+                4, 5, 6, 4, 6, 7,       // back
+                8, 9, 10, 8, 10, 11,    // top
+                12, 13, 14, 12, 14, 15, // bottom
+                16, 17, 18, 16, 18, 19, // right
+                20, 21, 22, 20, 22, 23, // left
             };
         }
+
 
         private static Vector3[] CreateBoxNormals()
         {

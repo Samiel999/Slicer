@@ -21,8 +21,9 @@ namespace QuestSlicer.Core.Geometry
                 name = $"Cube_{edgeLengthMm}mm"
             };
 
-            mesh.SetIndices(GetCubeIndices(), MeshTopology.Triangles, 0);
+            // Vertices must be set before indices, otherwise Unity discards the index buffer
             mesh.SetVertices(GetCubeVertices(edgeLengthM));
+            mesh.SetIndices(GetCubeIndices(), MeshTopology.Triangles, 0);
             mesh.SetNormals(GetCubeNormals());
             mesh.SetUVs(0, GetCubeUVs());
             mesh.RecalculateBounds();
@@ -33,41 +34,39 @@ namespace QuestSlicer.Core.Geometry
 
         private static Vector3[] GetCubeVertices(float size)
         {
-            float half = size * 0.5f;
+            // 24 vertices: four per face, so each face has its own normal
+            float h = size * 0.5f;
             return new[]
             {
-                // Front face
-                new Vector3(-half, -half, half),
-                new Vector3(half, -half, half),
-                new Vector3(half, half, half),
-                new Vector3(-half, half, half),
-                // Back face
-                new Vector3(-half, -half, -half),
-                new Vector3(half, -half, -half),
-                new Vector3(half, half, -half),
-                new Vector3(-half, half, -half),
+                // Front (+Z)
+                new Vector3(-h, -h, h), new Vector3(h, -h, h), new Vector3(h, h, h), new Vector3(-h, h, h),
+                // Back (-Z)
+                new Vector3(h, -h, -h), new Vector3(-h, -h, -h), new Vector3(-h, h, -h), new Vector3(h, h, -h),
+                // Top (+Y)
+                new Vector3(-h, h, h), new Vector3(h, h, h), new Vector3(h, h, -h), new Vector3(-h, h, -h),
+                // Bottom (-Y)
+                new Vector3(-h, -h, -h), new Vector3(h, -h, -h), new Vector3(h, -h, h), new Vector3(-h, -h, h),
+                // Right (+X)
+                new Vector3(h, -h, h), new Vector3(h, -h, -h), new Vector3(h, h, -h), new Vector3(h, h, h),
+                // Left (-X)
+                new Vector3(-h, -h, -h), new Vector3(-h, -h, h), new Vector3(-h, h, h), new Vector3(-h, h, -h),
             };
         }
 
         private static int[] GetCubeIndices()
         {
-            // 12 triangles (36 indices) for a cube
+            // 12 triangles (36 indices), two per face, four vertices per face
             return new[]
             {
-                // Front
-                0, 1, 2, 0, 2, 3,
-                // Back
-                5, 4, 7, 5, 7, 6,
-                // Top
-                3, 2, 6, 3, 6, 7,
-                // Bottom
-                4, 5, 1, 4, 1, 0,
-                // Right
-                1, 5, 6, 1, 6, 2,
-                // Left
-                4, 0, 3, 4, 3, 7,
+                0, 1, 2, 0, 2, 3,       // Front
+                4, 5, 6, 4, 6, 7,       // Back
+                8, 9, 10, 8, 10, 11,    // Top
+                12, 13, 14, 12, 14, 15, // Bottom
+                16, 17, 18, 16, 18, 19, // Right
+                20, 21, 22, 20, 22, 23, // Left
             };
         }
+
 
         private static Vector3[] GetCubeNormals()
         {
