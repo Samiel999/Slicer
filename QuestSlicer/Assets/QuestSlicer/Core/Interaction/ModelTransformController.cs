@@ -9,7 +9,7 @@ namespace QuestSlicer.Core
     public class ModelTransformController : MonoBehaviour
     {
         [Header("References")]
-        [SerializeField] private WorkspaceScale workspaceScale;
+        [SerializeField] private WorkspaceScaleHost workspaceScaleHost;
 
         [Header("Settings")]
         [Tooltip("Geschwindigkeit der Modell-Translation in mm pro Sekunde")]
@@ -18,7 +18,14 @@ namespace QuestSlicer.Core
         [Tooltip("Rotationsgeschwindigkeit in Grad pro Sekunde")]
         [SerializeField] private float rotationSpeedDegPerSecond = 90f;
 
-        private WorkspaceScale Scale => workspaceScale ?? FindObjectOfType<WorkspaceScale>();
+        private WorkspaceScale Scale
+        {
+            get
+            {
+                if (workspaceScaleHost == null) workspaceScaleHost = FindObjectOfType<WorkspaceScaleHost>();
+                return workspaceScaleHost != null ? workspaceScaleHost.Scale : null;
+            }
+        }
 
         /// <summary>
         /// Transformiert eine Controller-Bewegung in Unity-Metern
@@ -61,6 +68,15 @@ namespace QuestSlicer.Core
 
             transform.Rotate(0, yaw, 0, Space.World);
             transform.Rotate(pitch, 0, 0, Space.Self);
+        }
+
+        /// <summary>
+        /// Verschiebt das Modell um eine fachliche Strecke in mm (Weltkoordinaten).
+        /// Bewusst ohne ViewScale: Modellbewegung in mm bleibt unabhängig vom Ansichtsmaßstab.
+        /// </summary>
+        public void TranslateModelMm(UnityEngine.Vector3 deltaMm)
+        {
+            transform.Translate(UnitConversion.MmToM(deltaMm), Space.World);
         }
     }
 }

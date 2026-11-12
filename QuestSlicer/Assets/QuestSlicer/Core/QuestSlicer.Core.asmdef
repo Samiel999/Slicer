@@ -1,7 +1,7 @@
 {
   "name": "QuestSlicer.Core",
   "rootNamespace": "QuestSlicer.Core",
-  "references": ["UnityEngine"],
+  "references": ["UnityEngine", "Unity.InputSystem"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
